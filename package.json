@@ -1,6 +1,6 @@
 {
   "name": "time-periods",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An utility to handle time period operation.",
   "main": "./src/index.js",
   "scripts": {
