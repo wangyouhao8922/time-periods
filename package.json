@@ -9,10 +9,10 @@
   "engines": {
     "node": ">=12.13.0"
   },
-  "homepage": "https://your-username.github.io/your-repo-name/",
+  "homepage": "https://wangyouhao8922.github.io/time-periods/index.html",
   "repository": {
     "type": "git",
-    "url": "null"
+    "url": "https://github.com/wangyouhao8922/time-periods"
   },
   "keywords": [
     "time",
