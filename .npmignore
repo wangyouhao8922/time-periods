@@ -1,0 +1,10 @@
+coverage
+package-lock.json
+.vscode
+node_modules
+test_npm
+test
+out
+.gitignore
+todo
+.DS_Store

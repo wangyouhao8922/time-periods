@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: index.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: index.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Represents a time period between two Date object.
+ * 
+ * @class 
+ */
+class TimePeriod {
+    /**
+     * Creates a new TimePeriod.
+     * 
+     * @param {Date} startDateTime - The start time of the time period.
+     * @param {Date} endDateTime - The end time of the time period.
+     * @throws {RangeError} Throws an error if startDateTime > endDateTime.
+     * @throws {TypeError} Throws an error if the startDateTime or endDateTime is not a Date object.
+     */
+    constructor(startDateTime, endDateTime) { 
+        if (!(startDateTime instanceof Date) || !(endDateTime instanceof Date)) {
+            throw getTypeError('startDateTime and endDateTime', 'valid Date objects');
+        }
+        if (startDateTime > endDateTime) {
+            throw getStartLessEqualError();
+        }
+
+        this.startDateTime = startDateTime;
+        this.endDateTime = endDateTime;
+        // The merge method is not called on this TimePeriod object yet.
+        this.isMerged = null;
+    }
+
+    /**
+     * Subtracts the overlapped time period bewteen this timePeriod and provided timePeriod from this timePeriod.
+     * 
+     * @param {TimePeriod} timePeriod - The subtrahend.
+     * @param {Number} [minimumDurationInMins=0] - The optional minimum duration of the returned timePeriods.
+     * @returns {TimePeriod[]} An array of remaining timePeriod after subtraction.
+     * @throws {RangeError} Throws an error if minimumDurationInMins is less than 0.
+     * @throws {TypeError} Throws an error if minimumDurationInMins is not a number.
+     * @throws {TypeError} Throws an error if timePeriod is not a TimePeriod object.
+     */
+    subtract(timePeriod, minimumDurationInMins = 0) {
+        if ('number' !== typeof minimumDurationInMins) {
+            throw getTypeError('minimumDurationInMins', 'number');
+        }
+        if (minimumDurationInMins &lt; 0) {
+            throw getRangeError('minimumDurationInMins');
+        }
+        if (false === timePeriod instanceof TimePeriod) {
+            throw getTypeError('timePeriod', 'TimePeriod object');
+        }
+
+        const leftOverPeriodList = [];
+        const minimumDuration = minimumDurationInMins * 60 * 1000;
+
+        // If the provided timePeriod fall ahead this timePeriod. 
+        if (this.startDateTime > timePeriod.endDateTime) {
+            if (TimePeriod.isNotLessThanDuration(this.startDateTime, this.endDateTime, minimumDuration)) {
+                return [this];
+            }
+            return [];
+        }
+
+        // If the provided timePeriod fall behind this timePeriod. 
+        if (this.endDateTime &lt; timePeriod.startDateTime) {
+            if (TimePeriod.isNotLessThanDuration(this.startDateTime, this.endDateTime, minimumDuration)) {
+                return [this];
+            }
+            return [];
+        }
+
+        // If the provided timePeriod overlap with this timePeriod's start. 
+        if (this.startDateTime > timePeriod.startDateTime) {
+            if (TimePeriod.isNotLessThanDuration(timePeriod.endDateTime, this.endDateTime, minimumDuration)) {
+                return [new TimePeriod(timePeriod.endDateTime, this.endDateTime)];
+            }
+            return [];
+        }
+
+        // If the provided timePeriod overlap with this timePeriod's end. 
+        if (this.endDateTime &lt; timePeriod.endDateTime) {
+            if (TimePeriod.isNotLessThanDuration(this.startDateTime, timePeriod.startDateTime, minimumDuration)) {
+                return [new TimePeriod(this.startDateTime, timePeriod.startDateTime)];
+            }
+            return [];
+        }
+
+        // If the provided timePeriod overlap with this timePeriod's body.
+        if (TimePeriod.isNotLessThanDuration(this.startDateTime, timePeriod.startDateTime, minimumDuration)) {
+            leftOverPeriodList.push(new TimePeriod(this.startDateTime, timePeriod.startDateTime));
+        };
+        if (TimePeriod.isNotLessThanDuration(timePeriod.endDateTime, this.endDateTime, minimumDuration)) {
+            leftOverPeriodList.push(new TimePeriod(timePeriod.endDateTime, this.endDateTime))
+        }
+
+        return leftOverPeriodList;
+    }
+
+    /**
+     * Compares the duration of a pair of start time and end time.
+     * 
+     * @param {Date} startDateTime - The start time of the time period.
+     * @param {Date} endDateTime - The end time of the time period.
+     * @param {Number} duration - The duration to compare.
+     * @returns {Boolean} If duration of start time and end time is greater or equals to provided duration, or duration = 0 return true, else false.
+     * @throws {TypeError} Throws an error if duration is not a number.
+     * @throws {RangeError} Throws an error if duration is less than 0.
+     * @throws {RangeError} Throws an error if startDateTime > endDateTime.
+     */
+    static isNotLessThanDuration(startDateTime, endDateTime, duration) {
+        if ('number' !== typeof duration) {
+            throw getTypeError('duration', 'number');
+        }
+        if (duration &lt; 0) {
+            throw getRangeError('duration');
+        }
+        if (startDateTime > endDateTime) {
+            throw getStartLessEqualError();
+        }
+
+        if (0 === duration) {
+            return true;
+        }
+
+        if (endDateTime - startDateTime >= duration) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /** 
+     * Divides a timePeriod into periods with same duration provided.
+     * 
+     * @param {number} divisorInMins - The duration of divided periods.
+     * @returns {TimePeriod[]} An array of TimePeriod objects with duration = divisorInMins.
+     * @throws {TypeError} Throws an error if divisorInMins is not a number.
+     * @throws {RangeError} Throws an error if divisorInMins is less than or equals to 0.
+     */
+    divideByLength(divisorInMins) {
+        if ('number' !== typeof divisorInMins) {
+            throw getTypeError('divisorInMins', 'number');
+        }
+        if (divisorInMins &lt;= 0) {
+            throw getRangeError('divisorInMins');
+        }
+
+        const periodList = [];
+        const divisor = divisorInMins * 60 * 1000
+
+        let indexTime = new Date(this.startDateTime.getTime() + divisor);
+
+        while (indexTime &lt;= this.endDateTime) {
+            periodList.push(new TimePeriod(new Date(indexTime.getTime() - divisor), indexTime));
+            indexTime = new Date(indexTime.getTime() + divisor);
+        }
+
+        return periodList;
+    }
+
+    /**
+     * Merges two timePeriod into one period if no overlap bewteen two timePeriod, this timePeriod will be return.
+     * 
+     * @param {TimePeriod} timePeriod - The timePeriod wants to merge into this timePeriod.
+     * @returns {TimePeriod} The merged timePeriod.
+     * @throws {TypeError} Throws an error if the provided timePeriod is not a TimePeriod object.
+     */
+    merge(timePeriod) {
+        if (false === timePeriod instanceof TimePeriod) {
+            throw getTypeError('timePeriod', 'TimePeriod object');
+        }
+        const mergedTimePeriod = {};
+        // If this timePeriod fall behind provided timePeriod.
+        if (this.startDateTime > timePeriod.endDateTime) {
+            this.isMerged = false;
+            return this;
+        }
+
+        // If this timePeriod fall ahead provided timePeriod.
+        if (this.endDateTime &lt; timePeriod.startDateTime) {
+            this.isMerged = false;
+            return this;
+        }
+
+        // If any overlap bewteen two timePeriods.
+        if (this.startDateTime &lt; timePeriod.startDateTime) {
+            mergedTimePeriod.startDateTime = this.startDateTime;
+        } else {
+            mergedTimePeriod.startDateTime = timePeriod.startDateTime;
+        }
+
+        if (this.endDateTime > timePeriod.endDateTime) {
+            mergedTimePeriod.endDateTime = this.endDateTime;
+        } else {
+            mergedTimePeriod.endDateTime = timePeriod.endDateTime;
+        }
+
+        return new TimePeriod(mergedTimePeriod.startDateTime, mergedTimePeriod.endDateTime);
+    }
+
+    /** 
+     * Trims the end of this timePeriod by the provided duration.
+     * 
+     * @param {Number} durationInMins - The amount of time to trim from the end.
+     * @returns {TimePeriod} The trimmed timePeriod, or a timePeriod where start equals end if the duration exceeds the current time span.
+     * @throws {TypeError} Throws an error if the provided durationInMins is not a number.
+     * @throws {RangeError} Throws an error if the provided durationInMins is less than 0.
+     */
+    trimEnd(durationInMins) {
+        if ('number' !== typeof durationInMins) {
+            throw getTypeError('durationInMins', 'number');
+        }
+        if (0 > durationInMins) {
+            throw getRangeError('durationInMins');
+        }
+        const duration = durationInMins * 60 * 1000;
+        const trimmedEndDateTime = new Date(this.endDateTime.getTime() - duration);
+
+        // If duration > trimmedEndDateTime - startDateTime.
+        if (this.startDateTime > trimmedEndDateTime) {
+            return new TimePeriod(this.startDateTime, this.startDateTime);
+        }
+
+        return new TimePeriod(this.startDateTime, trimmedEndDateTime);
+    }
+}
+
+/**
+ * Represents an array of TimePeriod object.
+ * 
+ * @class 
+ */
+class TimePeriodList {
+    /** 
+     * Creates a new TimePeriodList.
+     * 
+     * @param {TimePeriod[]} timePeriodList - An array of TimePeriod object.
+     */
+    constructor(timePeriodList) {
+        this.timePeriodList = timePeriodList;
+    }
+
+    /** 
+     * Subtracts the overlapped time period between provided timePeriodList and this timePeriodList from this timePeriodList.
+     * 
+     * @param {TimePeriod[]} timePeriodToSubtractList - The subtrahend.
+     * @param {Number} [minimumDurationInMins=0] - The optional minimum duration of the returned timePeriods.
+     * @returns {TimePeriodList} The TimePeriodList object contain subtracted timePeriods.
+     * @throws {TypeError} Throws an error if timePeriod is not a TimePeriod object.
+     * @throws {TypeError} Throws an error if minimumDurationInMins is not a number.
+     * @throws {RangeError} Throws an error if minimumDurationInMins is less than 0.
+     */
+    subtractMultiple(timePeriodToSubtractList, minimumDurationInMins = 0) {
+        let subtractedTimePeriodList = [...this.timePeriodList];
+        timePeriodToSubtractList.forEach((timePeriodToSubtract) => {
+            subtractedTimePeriodList = subtractedTimePeriodList.flatMap((timePeriod) => {
+                return timePeriod.subtract(timePeriodToSubtract, minimumDurationInMins);
+            });
+        });
+
+        return new TimePeriodList(subtractedTimePeriodList);
+    }
+
+    /** 
+     * Divides all the time period in this timePeriodList into periods with same duration provided.
+     * 
+     * @param {number} divisorInMins - The duration of divided periods.
+     * @returns {TimePeriodList} The TimePeriodList object contain subtracted timePeriods.
+     * @throws {TypeError} Throws an error if divisorInMins is not a number.
+     * @throws {RangeError} Throws an error if divisorInMins is less than or equals to 0.
+     */
+    divideAllByLength(divisorInMins) {
+        return new TimePeriodList(this.timePeriodList.flatMap((timePeriod) => {
+            return timePeriod.divideByLength(divisorInMins);
+        }));
+    };
+
+    /** 
+     * Iterator method to allow iteration over the time periods in the list.
+     * 
+     * This method allows the class to be used in a for...of loop or any other iteration context. It provides the standard iterable protocol for JavaScript.
+     * 
+     * @returns {Object} An iterator object with a next() method that returns an object containing { value: TimePeriod, done: boolean }. 
+     * When the iteration is complete, done is true.
+     */
+    [Symbol.iterator]() {
+        let index = 0;
+        let timePeriodList = this.timePeriodList;
+
+        return {
+            next() {
+                if (index &lt; timePeriodList.length) {
+                    return { value: timePeriodList[index++], done: false };
+                } else {
+                    return { done: true };
+                }
+            }
+        };
+    }
+
+    /** 
+     * Iterates over each time period in the list and applies the provided callback function.
+     *
+     * The callback is invoked with three arguments: the current time period, the index, and the entire timePeriodList.
+     *
+     * @param {function} callback - A function that is executed for each time period.
+     * The callback receives the following arguments:
+     *   - {TimePeriod} currentTimePeriod - The current time period being processed.
+     *   - {number} index - The index of the current time period.
+     *   - {TimePeriod[]} timePeriodList - The entire list of time periods.
+     */
+    forEach(callback) {
+        for (let i = 0; i &lt; this.timePeriodList.length; i++) {
+            callback(this.timePeriodList[i], i, this.timePeriodList);
+        }
+    }
+
+    /** 
+     * Merges all timePeriod, until no overlap bewteen every timePeriod.
+     * 
+     * @param {TimePeriod[]} timePeriodList - The timePeriodList wants to merge into this timePeriodList.
+     * @returns {TimePeriodList} The TimePeriodList object contain merged timePeriod.
+     * @throws {TypeError} Throws an error if the provided timePeriodList or this timePeriodList having not TimePeriod object.
+     */
+    mergeMultiple(timePeriodList = []) {
+        let periodToMergeList;
+        let mergedPeriodList = [];
+
+        if (timePeriodList.length > 0) {
+            periodToMergeList = [...this.timePeriodList, ...timePeriodList];
+        } else {
+            periodToMergeList = this.timePeriodList;
+        }
+
+        for (let i = 0; i &lt; periodToMergeList.length; i++) {
+            let isEarlyBreak = false;
+            // Find some other timePeriod to merge.
+            for (let j = i + 1; j &lt; periodToMergeList.length; j++) {
+                const mergedTimePeriod = periodToMergeList[j].merge(periodToMergeList[i]);
+                // If able it merge with other timePeriod.
+                if (null === mergedTimePeriod.isMerged) {
+                    // Merge two and break.
+                    periodToMergeList[j] = mergedTimePeriod;
+                    isEarlyBreak = true;
+                    break;
+                }
+            }
+            if (false === isEarlyBreak) {
+                // If can't merge with any other time period.
+                mergedPeriodList.push(periodToMergeList[i]);
+            }
+        }
+
+        return new TimePeriodList(mergedPeriodList);
+    }
+
+    /** 
+     * Gets the first (index + 1) timePeriod in timePeriodList.
+     * 
+     * @param {Number} index - The index wants to in this timePeriodList.
+     * @returns {TimePeriod} The first (index + 1) timePeriod in timePeriodList.
+     */
+    get(index) {
+        return this.timePeriodList[index];
+    }
+
+    /** 
+     * Gets an array contain all the timePeriod in this timePeriodList.
+     * 
+     * @returns {TimePeriod[]} The array contain all the timePeriod in this timePeriodList.
+     */
+    getAll() {
+        return this.timePeriodList;
+    }
+}
+
+/** 
+ * Gets a TypeError object with message contain formatted string.
+ * 
+ * @param {String} parameterName - The parameter that violate with the accepted type.
+ * @param {String} type - The accepted type.
+ * @returns {TypeError} The TypeError object with message contain formatted string.
+ */
+function getTypeError(parameterName, type) {
+    return new TypeError(`The parameter ${parameterName} must be a ${type}.`);
+}
+  
+/** 
+ * Gets a RangeError object with message contain formatted string.
+ * 
+ * @param {String} parameterName - The parameter that violate with the accepted range.
+ * @returns {RangeError} The RangeError object with message contain formatted string.
+ */
+function getRangeError(parameterName) {
+    return new RangeError(`The parameter ${parameterName} is out of range.`);
+}
+  
+/**
+ * Gets a RangeError object with hard coded message.
+ * 
+ * @returns {RangeError} The RangeError object with hard coded message.
+ */
+function getStartLessEqualError() {
+    return new RangeError('startDateTime must be less than or equal to endDateTime');
+}
+
+module.exports = {
+    TimePeriodList, TimePeriod
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="TimePeriod.html">TimePeriod</a></li><li><a href="TimePeriodList.html">TimePeriodList</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.3</a> on Mon Sep 09 2024 21:36:56 GMT+0800 (GMT+08:00)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

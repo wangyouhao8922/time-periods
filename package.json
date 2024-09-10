@@ -1,0 +1,33 @@
+{
+  "name": "time-periods",
+  "version": "1.0.0",
+  "description": "An utility to handle time period operation.",
+  "main": "./src/index.js",
+  "scripts": {
+    "test": "TZ=UTC jest --coverage"
+  },
+  "engines": {
+    "node": ">=12.13.0"
+  },
+  "homepage": "https://your-username.github.io/your-repo-name/",
+  "repository": {
+    "type": "git",
+    "url": "null"
+  },
+  "keywords": [
+    "time",
+    "interval",
+    "span",
+    "period",
+    "merge",
+    "subtract",
+    "divide",
+    "utility"
+  ],
+  "author": "Stanley Wang (You Hao Wang)",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^26.6.3"
+  },
+  "dependencies": {}
+}
