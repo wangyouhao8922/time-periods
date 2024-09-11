@@ -102,7 +102,7 @@ Creates a new TimePeriod object.
 
 startDateTime (Date): The start of the time period.
 endDateTime (Date): The end of the time period.
-Throws an TypeError if the startDateTime or endDateTime is not a Date object.
+Throws an TypeError if the startDateTime or endDateTime is not a valid Date object.
 Throws an RangeError if startDateTime is greater than endDateTime.
 
 ### Instance properties
@@ -118,6 +118,9 @@ Subtracts the overlapped time period bewteen this timePeriod and provided timePe
 
 #### TimePeriod.prototype.trimEnd(durationInMins):
 Trims the end of this timePeriod by the provided duration.
+
+#### TimePeriod.prototype.contains(timePeriod):
+Returns true if the provided timePeriod is fully contained within this timePeriod.
 
 ### Static methods
 
@@ -136,23 +139,29 @@ Creates a new TimePeriodList object with an array of TimePeriod objects.
 
 ### Instance properties
 
-#### timePeriodList.divideAllByLength(divisorInMins):
+#### TimePeriodList.prototype.divideAllByLength(divisorInMins):
 Divides all the time period in this timePeriodList into periods with same duration provided.
 
-#### timePeriodList.forEach(callback):
+#### TimePeriodList.prototype.forEach(callback):
 Iterates over each time period in the list and applies the provided callback function. The callback is invoked with three arguments: the current time period, the index, and the entire timePeriodList.
 
-#### timePeriodList.get(index):
+#### TimePeriodList.prototype.get(index):
 Gets the first (index + 1) timePeriod in timePeriodList.
 
-#### timePeriodList.getAll():
-Gets an array contain all the timePeriod in this timePeriodList.
+#### TimePeriodList.prototype.getAll():
+Gets an array contains all the timePeriod in this timePeriodList.
 
-#### timePeriodList.mergeMultiple(timePeriodList):
+#### TimePeriodList.prototype.mergeMultiple(timePeriodList):
 Merges all timePeriod, until no overlap bewteen every timePeriod.
 
-#### timePeriodList.subtractMultiple(timePeriodToSubtractList, minimumDurationInMins):
+#### TimePeriodList.prototype.subtractMultiple(timePeriodToSubtractList, minimumDurationInMins):
 Subtracts the overlapped time period between provided timePeriodList and this timePeriodList from this timePeriodList.
+
+#### TimePeriodList.prototype.contains(timePeriod):
+Returns true if the provided timePeriod is fully contained within any timePeriod of this timePeriodList.
+
+#### TimePeriodList.prototype.trimAllEnd(durationInMins):
+Trims the end of all timePeriod in this timePeriodList by the provided duration.
 
 # License
 [MIT © Stanley Wang (You Hao Wang)](https://github.com/wangyouhao8922/time-periods/blob/main/LICENSE.md)

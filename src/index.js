@@ -1,4 +1,11 @@
 /**
+ * @file TimePeriod Library
+ * @description A utility library for working with periods of time in JavaScript. It allows you to create time periods, divide them into smaller periods, subtract time periods, and perform other common operations on time periods.
+ *
+ * @ingroe This file contains the core logic for managing time periods.
+ */
+
+/**
  * Represents a time period between two Date object.
  * 
  * @class 
@@ -427,6 +434,7 @@ class TimePeriodList {
 }
 
 /** 
+ * @ignore
  * Gets a TypeError object with message contain formatted string.
  * 
  * @param {String} parameterName - The parameter that violate with the accepted type.
@@ -438,6 +446,7 @@ function getTypeError(parameterName, type) {
 }
 
 /** 
+ * @ignore
  * Gets a RangeError object with message contain formatted string.
  * 
  * @param {String} parameterName - The parameter that violate with the accepted range.
@@ -448,6 +457,7 @@ function getRangeError(parameterName) {
 }
 
 /**
+ * @ignore
  * Gets a RangeError object with hard coded message.
  * 
  * @returns {RangeError} The RangeError object with hard coded message.
