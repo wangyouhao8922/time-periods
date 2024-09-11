@@ -11,9 +11,15 @@ test('Create TimePeriod', () => {
     function expectRangeError() {
         const timePeriod = new TimePeriod(new Date('2024-09-08T23:00:00'), new Date('2024-09-08T22:00:00'));
     }
-    expect(expectRangeError).toThrowError('startDateTime must be less than or equal to endDateTime');
+    expect(expectRangeError).toThrowError('startDateTime must be less than or equal to endDateTime.');
+
+    // Create with invalid Date Object.
+    function expectInvalidDateError() {
+        const timePeriod = new TimePeriod(new Date('2024-09-8T23:00:00'), new Date('2024-09-08T22:00:00'));
+    }
+    expect(expectInvalidDateError).toThrowError('The parameter startDateTime and endDateTime must be a valid Date objects.');
 });
-test('TimePeriod.merge', () => {
+test('timePeriod.merge', () => {
     // Merge with this timePeriod start = provided end.
     const mergedTimePeriod = new TimePeriod(new Date('2024-09-08T22:00:00'), new Date('2024-09-08T23:00:00'))
         .merge(new TimePeriod(new Date('2024-09-08T21:00:00'), new Date('2024-09-08T22:00:00')));
@@ -70,7 +76,7 @@ test('TimePeriod.merge', () => {
     }
     expect(expectTypeError).toThrowError('The parameter timePeriod must be a TimePeriod object.');
 });
-test('TimePeriod.subtract', () => {
+test('timePeriod.subtract', () => {
     // Subtract with this timePeriod overlaps at the beginning.
     const subtractOverlapBeginning = new TimePeriod(new Date('2024-09-08T22:00:00'), new Date('2024-09-08T23:00:00'))
         .subtract(new TimePeriod(new Date('2024-09-08T21:00:00'), new Date('2024-09-08T22:15:00')));
@@ -100,7 +106,6 @@ test('TimePeriod.subtract', () => {
     expect(subtractOverlapMiddle[0].endDateTime.toISOString()).toBe('2024-09-08T22:15:00.000Z');
     expect(subtractOverlapMiddle[1].startDateTime.toISOString()).toBe('2024-09-08T22:45:00.000Z');
     expect(subtractOverlapMiddle[1].endDateTime.toISOString()).toBe('2024-09-08T23:00:00.000Z');
-    console.log(subtractOverlapMiddle); 
 
     // Subtract with this timePeriod overlaps at the middle, minimumDurationInMins = 30 mins.
     const subtractOverlapMiddle30 = new TimePeriod(new Date('2024-09-08T22:00:00'), new Date('2024-09-08T23:00:00'))
@@ -149,7 +154,7 @@ test('TimePeriod.subtract', () => {
             timePeriod.subtract('timePeriod', 0);
         })
     };
-    expect(expectInvalidObjectError).toThrowError('timePeriod must be a TimePeriod object.');
+    expect(expectInvalidObjectError).toThrowError('The parameter timePeriod must be a TimePeriod object.');
 
     // Subtract with none timePeriod instance.
     function expectMinimumDurationInMinsTypeError() {
@@ -157,9 +162,14 @@ test('TimePeriod.subtract', () => {
             timePeriod.subtract('timePeriod', '0');
         })
     };
-    expect(expectMinimumDurationInMinsTypeError).toThrowError('minimumDurationInMins must be a number.');
+    expect(expectMinimumDurationInMinsTypeError).toThrowError('The parameter minimumDurationInMins must be a number.');
+
+    // Subtract with itself.
+    const timePeriod = new TimePeriod(new Date('2024-01-01T01:00:00'), new Date('2024-01-01T02:00:00'))
+    const emptyList = timePeriod.subtract(timePeriod);
+    expect(emptyList.length).toBe(0);
 });
-test('TimePeriod.divideByLength', () => {
+test('timePeriod.divideByLength', () => {
     // Divide by length with string.
     const timePeriod = new TimePeriod(new Date('2024-09-08T22:00:00'), new Date('2024-09-08T23:00:00'));
     function expectNumberError() {
@@ -184,7 +194,7 @@ test('TimePeriod.divideByLength', () => {
     expect(timePeriodList[3].startDateTime.toISOString()).toBe('2024-09-08T22:45:00.000Z');
     expect(timePeriodList[3].endDateTime.toISOString()).toBe('2024-09-08T23:00:00.000Z');
 });
-test('TimePeriod.trimEnd', () => {
+test('timePeriod.trimEnd', () => {
     // trimEnd with 15.
     const timePeriod = new TimePeriod(new Date('2024-09-08T22:00:00'), new Date('2024-09-08T23:00:00'));
     const trimmedTimePeriod = timePeriod.trimEnd(15);
@@ -225,5 +235,22 @@ test('TimePeriod.isNotLessThanDuration', () => {
     function expectRangeError() {
         TimePeriod.isNotLessThanDuration(new Date('2024-09-08T23:00:00'), new Date('2024-09-08T22:00:00'), 1);
     };
-    expect(expectRangeError).toThrowError('startDateTime must be less than or equal to endDateTime');
+    expect(expectRangeError).toThrowError('startDateTime must be less than or equal to endDateTime.');
+});
+test('timePeriod.contains', () => {
+    // Contains with this timePeriod start = provided start, this timePeriod end = provided end.
+    const timePeriod = new TimePeriod(new Date('2024-09-08T21:00:00'), new Date('2024-09-08T22:00:00'));
+    const contains = timePeriod.contains(timePeriod);
+    expect(contains).toBe(true);
+
+    // Contains with this timePeriod do not contains provided timePeriod.
+    const doesntContains = timePeriod.contains(new TimePeriod(new Date('2024-09-08T21:00:00'), new Date('2024-09-08T22:10:00')));
+    expect(doesntContains).toBe(false);
+
+    // Contains with none TimePeriod object.
+    function expectTypeError() {
+        const invalidTimePeriod = "new TimePeriod(new Date('2024-09-08T21:00:00'), new Date('2024-09-08T22:00:00'))";
+        timePeriod.contains(invalidTimePeriod);
+    }
+    expect(expectTypeError).toThrowError('The parameter timePeriod must be a TimePeriod object.');
 });

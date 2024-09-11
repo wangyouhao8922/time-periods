@@ -18,7 +18,7 @@ test('Create TimePeriodList, forEach, for loop', () => {
         }
     });
 });
-test('TimePeriodList.subtractMultiple', () => {
+test('timePeriodList.subtractMultiple', () => {
     const timePeriodList = new TimePeriodList([
         new TimePeriod(new Date('2024-09-08T09:00:00'), new Date('2024-09-08T12:00:00')), 
         new TimePeriod(new Date('2024-09-08T22:00:00'), new Date('2024-09-08T23:00:00'))
@@ -47,7 +47,7 @@ test('TimePeriodList.subtractMultiple', () => {
     expect(subtracted40TimePeriodList.getAll()[0].startDateTime.toISOString()).toBe('2024-09-08T09:20:00.000Z');
     expect(subtracted40TimePeriodList.getAll()[0].endDateTime.toISOString()).toBe('2024-09-08T11:00:00.000Z');
 });
-test('TimePeriodList.divideAllByLength', () => {
+test('timePeriodList.divideAllByLength', () => {
     const timePeriodList = new TimePeriodList([
         new TimePeriod(new Date('2024-09-08T09:00:00'), new Date('2024-09-08T12:00:00')), 
         new TimePeriod(new Date('2024-09-08T22:00:00'), new Date('2024-09-08T23:00:00'))
@@ -58,7 +58,7 @@ test('TimePeriodList.divideAllByLength', () => {
     expect(dividedTimePeriodList.getAll()[0].startDateTime.toISOString()).toBe('2024-09-08T09:00:00.000Z');
     expect(dividedTimePeriodList.getAll()[0].endDateTime.toISOString()).toBe('2024-09-08T09:15:00.000Z');
 });
-test('TimePeriodList.mergeMultiple', () => {
+test('timePeriodList.mergeMultiple', () => {
     const toMergeTimePeriodList = new TimePeriodList([
         new TimePeriod(new Date('2024-09-08T09:00:00'), new Date('2024-09-08T10:30:00')), 
         new TimePeriod(new Date('2024-09-08T13:00:00'), new Date('2024-09-08T15:00:00')),
@@ -77,4 +77,43 @@ test('TimePeriodList.mergeMultiple', () => {
     ]);
     expect(mergedInputTimePeriodList.get(1).startDateTime.toISOString()).toBe('2024-09-08T22:00:00.000Z');
     expect(mergedInputTimePeriodList.get(1).endDateTime.toISOString()).toBe('2024-09-08T23:00:00.000Z');
+
+    // mergeMultiple with a TimePeriodList object.
+    const mergedWithObjectTimePeriodList = toMergeTimePeriodList.mergeMultiple(new TimePeriodList([
+        new TimePeriod(new Date('2024-09-08T22:00:00'), new Date('2024-09-08T23:00:00'))
+    ]));
+    expect(mergedWithObjectTimePeriodList.get(1).startDateTime.toISOString()).toBe('2024-09-08T22:00:00.000Z');
+    expect(mergedWithObjectTimePeriodList.get(1).endDateTime.toISOString()).toBe('2024-09-08T23:00:00.000Z');
+});
+test('timePeriodList.contains', () => {
+    // Contains with this timePeriodList contains provided timePeriod.
+    const timePeriodList = new TimePeriodList([
+        new TimePeriod(new Date('2024-09-08T09:00:00'), new Date('2024-09-08T12:00:00')), 
+        new TimePeriod(new Date('2024-09-08T22:00:00'), new Date('2024-09-08T23:00:00'))
+    ]);
+    const contains = timePeriodList.contains(new TimePeriod(new Date('2024-09-08T22:10:00'), new Date('2024-09-08T22:50:00')));
+    expect(contains).toBe(true);
+
+    // Contains with this timePeriodList do not contains provided timePeriod.
+    const doesntContains = timePeriodList.contains(new TimePeriod(new Date('2024-09-08T21:10:00'), new Date('2024-09-08T22:50:00')));
+    expect(doesntContains).toBe(false);
+
+    // Contains with none TimePeriod object.
+    function expectTypeError() {
+        const invalidTimePeriod = "new TimePeriod(new Date('2024-09-08T21:00:00'), new Date('2024-09-08T22:00:00'))";
+        timePeriodList.contains(invalidTimePeriod);
+    }
+    expect(expectTypeError).toThrowError('The parameter timePeriod must be a TimePeriod object.');
+});
+test('timePeriodList.trimAllEnd', () => {
+    // trimAllEnd with 10.
+    const timePeriodList = new TimePeriodList([
+        new TimePeriod(new Date('2024-09-08T09:00:00'), new Date('2024-09-08T12:00:00')), 
+        new TimePeriod(new Date('2024-09-08T22:00:00'), new Date('2024-09-08T23:00:00'))
+    ]);
+    const trimmedTimePeriodList = timePeriodList.trimAllEnd(10);
+    expect(trimmedTimePeriodList.get(0).startDateTime.toISOString()).toBe('2024-09-08T09:00:00.000Z');
+    expect(trimmedTimePeriodList.get(0).endDateTime.toISOString()).toBe('2024-09-08T11:50:00.000Z');
+    expect(trimmedTimePeriodList.get(1).startDateTime.toISOString()).toBe('2024-09-08T22:00:00.000Z');
+    expect(trimmedTimePeriodList.get(1).endDateTime.toISOString()).toBe('2024-09-08T22:50:00.000Z');
 });
