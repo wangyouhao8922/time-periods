@@ -90,9 +90,9 @@ splitPeriods.forEach((period, index) => {
 });
 ```
 
-## API Reference
+## TimePeriod API Reference
 
-### TimePeriod
+### Constructor
 
 ```js
 new TimePeriod(startDateTime, endDateTime)
@@ -105,28 +105,36 @@ endDateTime (Date): The end of the time period.
 Throws an TypeError if the startDateTime or endDateTime is not a Date object.
 Throws an RangeError if startDateTime is greater than endDateTime.
 
-#### timePeriod.divideByLength(divisorInMins):
+### Instance properties
+
+#### TimePeriod.prototype.divideByLength(divisorInMins):
 Divides a timePeriod into periods with same duration provided.
 
-#### timePeriod.merge(timePeriod):
+#### TimePeriod.prototype.merge(timePeriod):
 Merges two timePeriod into one period if no overlap bewteen two timePeriod, this timePeriod will be return.
 
-#### timePeriod.subtract(timePeriod, minimumDurationInMins):
+#### TimePeriod.prototype.subtract(timePeriod, minimumDurationInMins):
 Subtracts the overlapped time period bewteen this timePeriod and provided timePeriod from this timePeriod.
 
-#### timePeriod.trimEnd(durationInMins):
+#### TimePeriod.prototype.trimEnd(durationInMins):
 Trims the end of this timePeriod by the provided duration.
 
-#### (static) TimePeriod.isNotLessThanDuration(startDateTime, endDateTime, duration):
+### Static methods
+
+#### TimePeriod.isNotLessThanDuration(startDateTime, endDateTime, duration):
 Compares the duration of a pair of start time and end time.
 
-### TimePeriodList
+### TimePeriodList API Reference
+
+### Constructor
 
 ```js
 new TimePeriodList(timePeriodList);
 ```
 
 Creates a new TimePeriodList object with an array of TimePeriod objects.
+
+### Instance properties
 
 #### timePeriodList.divideAllByLength(divisorInMins):
 Divides all the time period in this timePeriodList into periods with same duration provided.

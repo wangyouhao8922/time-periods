@@ -10,10 +10,10 @@ class TimePeriod {
      * @param {Date} startDateTime - The start time of the time period.
      * @param {Date} endDateTime - The end time of the time period.
      * @throws {RangeError} Throws an error if startDateTime > endDateTime.
-     * @throws {TypeError} Throws an error if the startDateTime or endDateTime is not a Date object.
+     * @throws {TypeError} Throws an error if the startDateTime or endDateTime is not a valid Date object.
      */
-    constructor(startDateTime, endDateTime) { 
-        if (!(startDateTime instanceof Date) || !(endDateTime instanceof Date)) {
+    constructor(startDateTime, endDateTime) {
+        if (!(startDateTime instanceof Date) || !(endDateTime instanceof Date) || isNaN(startDateTime) || isNaN(endDateTime)) {
             throw getTypeError('startDateTime and endDateTime', 'valid Date objects');
         }
         if (startDateTime > endDateTime) {
@@ -83,10 +83,10 @@ class TimePeriod {
         }
 
         // If the provided timePeriod overlap with this timePeriod's body.
-        if (TimePeriod.isNotLessThanDuration(this.startDateTime, timePeriod.startDateTime, minimumDuration)) {
+        if (TimePeriod.isNotLessThanDuration(this.startDateTime, timePeriod.startDateTime, minimumDuration) && 0 !== this.startDateTime - timePeriod.startDateTime) { // filter out start = start
             leftOverPeriodList.push(new TimePeriod(this.startDateTime, timePeriod.startDateTime));
         };
-        if (TimePeriod.isNotLessThanDuration(timePeriod.endDateTime, this.endDateTime, minimumDuration)) {
+        if (TimePeriod.isNotLessThanDuration(timePeriod.endDateTime, this.endDateTime, minimumDuration) && 0 !== this.endDateTime - timePeriod.endDateTime) { // filter out end = end
             leftOverPeriodList.push(new TimePeriod(timePeriod.endDateTime, this.endDateTime))
         }
 
@@ -220,6 +220,24 @@ class TimePeriod {
 
         return new TimePeriod(this.startDateTime, trimmedEndDateTime);
     }
+
+    /** 
+     * Returns true if the provided timePeriod is fully contained within this timePeriod.
+     * 
+     * @param {TimePeriod} timePeriod - The timePeriod wants to check if is fully contained within this timePeriod or not.
+     * @returns {Boolean} Returns true if the provided timePeriod is fully contained within this timePeriod, else return false.
+     * @throws {TypeError} Throws an error if the provided timePeriod is not a TimePeriod object.
+     */
+    contains(timePeriod) {
+        if (false === timePeriod instanceof TimePeriod) {
+            throw getTypeError('timePeriod', 'TimePeriod object');
+        }
+
+        if (timePeriod.startDateTime >= this.startDateTime && timePeriod.endDateTime <= this.endDateTime) {
+            return true;
+        }
+        return false;
+    }
 }
 
 /**
@@ -315,13 +333,19 @@ class TimePeriodList {
     /** 
      * Merges all timePeriod, until no overlap bewteen every timePeriod.
      * 
-     * @param {TimePeriod[]} timePeriodList - The timePeriodList wants to merge into this timePeriodList.
+     * @param {TimePeriod[] | TimePeriodList} timePeriodList - The timePeriods wants to merge into this timePeriodList. This can be: 
+     * - An array of timePeriod.
+     * - TimePeriodList object.
      * @returns {TimePeriodList} The TimePeriodList object contain merged timePeriod.
      * @throws {TypeError} Throws an error if the provided timePeriodList or this timePeriodList having not TimePeriod object.
      */
     mergeMultiple(timePeriodList = []) {
         let periodToMergeList;
         let mergedPeriodList = [];
+
+        if (true === timePeriodList instanceof TimePeriodList) {
+            timePeriodList = timePeriodList.timePeriodList;
+        }
 
         if (timePeriodList.length > 0) {
             periodToMergeList = [...this.timePeriodList, ...timePeriodList];
@@ -362,12 +386,43 @@ class TimePeriodList {
     }
 
     /** 
-     * Gets an array contain all the timePeriod in this timePeriodList.
+     * Gets an array contains all the timePeriod in this timePeriodList.
      * 
      * @returns {TimePeriod[]} The array contain all the timePeriod in this timePeriodList.
      */
     getAll() {
         return this.timePeriodList;
+    }
+
+    /** 
+     * Returns true if the provided timePeriod is fully contained within any timePeriod of this timePeriodList.
+     * 
+     * @param {TimePeriod} timePeriod - The timePeriod wants to check if is fully contained within any timePeriod of this timePeriodList or not.
+     * @returns {Boolean} Returns true if the provided timePeriod is fully contained within any timePeriod of this timePeriodList, else return false.
+     * @throws {TypeError} Throws an error if the provided timePeriod is not a TimePeriod object.
+     */
+    contains(timePeriod) {
+        for (let i = 0; i < this.timePeriodList.length; i++) {
+            if (this.timePeriodList[i].contains(timePeriod)) {
+                return true
+            }
+        }
+        return false;
+    }
+
+    /** 
+     * Trims the end of all timePeriod in this timePeriodList by the provided duration.
+     * 
+     * @param {Number} durationInMins - The amount of time to trim from the end.
+     * @returns {TimePeriodList} The trimmed TimePeriodList, if the duration exceeds the current time span a timePeriod where start equals end is return.
+     * @throws {TypeError} Throws an error if the provided durationInMins is not a number.
+     * @throws {RangeError} Throws an error if the provided durationInMins is less than 0.
+     */
+    trimAllEnd(durationInMins) {
+        const trimmedTimePeriodList = this.timePeriodList.map((timePeriod) => {
+            return timePeriod.trimEnd(durationInMins);
+        });
+        return new TimePeriodList(trimmedTimePeriodList);
     }
 }
 
@@ -381,7 +436,7 @@ class TimePeriodList {
 function getTypeError(parameterName, type) {
     return new TypeError(`The parameter ${parameterName} must be a ${type}.`);
 }
-  
+
 /** 
  * Gets a RangeError object with message contain formatted string.
  * 
@@ -391,14 +446,14 @@ function getTypeError(parameterName, type) {
 function getRangeError(parameterName) {
     return new RangeError(`The parameter ${parameterName} is out of range.`);
 }
-  
+
 /**
  * Gets a RangeError object with hard coded message.
  * 
  * @returns {RangeError} The RangeError object with hard coded message.
  */
 function getStartLessEqualError() {
-    return new RangeError('startDateTime must be less than or equal to endDateTime');
+    return new RangeError('startDateTime must be less than or equal to endDateTime.');
 }
 
 module.exports = {
